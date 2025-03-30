@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "../config/axios.js";
 
 const Project = () => {
   const location = useLocation();
 
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(new Set());
+  const [project, setProject] = useState(location.state.project);
 
   const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]); // New state variable for messages
-  const [fileTree, setFileTree] = useState({});
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -24,13 +24,49 @@ const Project = () => {
       return newSelectedUserId;
     });
   };
+
+  function addCollaborators() {
+    axios
+      .put("/projects/add-user", {
+        projectId: location.state.project._id,
+        users: Array.from(selectedUserId),
+      })
+      .then((res) => {
+        console.log(res.data);
+        setIsModalOpen(false);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
   console.log(location.state);
+
+  useEffect(() => {
+    axios
+      .get(`/projects/get-project/${location.state.project._id}`)
+      .then((res) => {
+        console.log(res.data.project);
+
+        setProject(res.data.project);
+        // setFileTree(res.data.project.fileTree || {});
+      });
+
+    axios
+      .get("/users/all")
+      .then((res) => {
+        setUsers(res.data.users);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
 
   return (
     <main className="h-screen w-screen flex ">
       <section className="left relative  flex flex-col h-full min-w-96 bg-slate-300 ">
         <header className="flex justify-between items-center p-2 px-4 w-full bg-slate-100">
-          <button className="flex gap-2 onClick={() => setIsModalOpen(true)}">
+          <button className="flex gap-2" onClick={() => setIsModalOpen(true)}>
             <i className="ri-add-fill mr-1"></i>
             <p>Add Collaborator</p>
           </button>
@@ -73,7 +109,8 @@ const Project = () => {
             isSidePanelOpen ? "translate-x-0" : "-translate-x-full"
           } top-0`}
         >
-          <header className="flex justify-end p-2 px-3 bg-slate-200">
+          <header className="flex justify-between items-center p-2 px-3 bg-slate-200">
+            <h1 className="font-semibold text-lg">Collaborators</h1>
             <button
               onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
               className="p-2"
@@ -83,13 +120,17 @@ const Project = () => {
           </header>
 
           <div className="users flex flex-col gap-2">
-            <div className="user cursor-pointer hover:bg-slate-200 p-2  flex gap-2 itms-center">
-              <div className="aspect-square rounded-full  w-fit h-fit flex items-center justify-center p-5 text-white  bg-slate-600">
-                <i className="ri-user-fill absolute"></i>
-              </div>
-
-              <h1 className="font-semibold text-lg ">username</h1>
-            </div>
+            {project.users &&
+              project.users.map((user) => {
+                return (
+                  <div className="user cursor-pointer hover:bg-slate-200 p-2 flex gap-2 items-center">
+                    <div className="aspect-square rounded-full w-fit h-fit flex items-center justify-center p-5 text-white bg-slate-600">
+                      <i className="ri-user-fill absolute"></i>
+                    </div>
+                    <h1 className="font-semibold text-lg">{user.email}</h1>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </section>
