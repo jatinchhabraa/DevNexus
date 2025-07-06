@@ -2,6 +2,9 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "../config/axios.js";
 import { UserContext } from "../context/user.context.jsx";
+<h1 className="text-3xl text-blue-600 font-bold underline">
+  Tailwind is working!
+</h1>;
 
 const Login = () => {
   const [email, setEmail] = useState("");

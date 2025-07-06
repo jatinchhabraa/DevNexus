@@ -9,32 +9,43 @@ export const createProject = async ({ name, userId }) => {
     throw new Error("UserId is required");
   }
 
-  const project = await projectModel.create({
-    name,
-    users: [userId],
-  });
+  let project;
+  try {
+    project = await projectModel.create({
+      name,
+      users: [userId],
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new Error("Project name already exists");
+    }
+    throw error;
+  }
 
   return project;
 };
 
 export const getAllProjectByUserId = async ({ userId }) => {
   if (!userId) {
-    throw new console.error("userId is required");
+    throw new Error("UserId is required");
   }
 
   const allUserProjects = await projectModel.find({
     users: userId,
   });
+
   return allUserProjects;
 };
 
 export const addUsersToProject = async ({ projectId, users, userId }) => {
   if (!projectId) {
-    throw new Error("project id is required");
+    throw new Error("projectId is required");
   }
+
   if (!mongoose.Types.ObjectId.isValid(projectId)) {
     throw new Error("Invalid projectId");
   }
+
   if (!users) {
     throw new Error("users are required");
   }
@@ -59,8 +70,10 @@ export const addUsersToProject = async ({ projectId, users, userId }) => {
     users: userId,
   });
 
+  console.log(project);
+
   if (!project) {
-    throw new Error("User not belong to this project ");
+    throw new Error("User not belong to this project");
   }
 
   const updatedProject = await projectModel.findOneAndUpdate(
@@ -96,6 +109,34 @@ export const getProjectById = async ({ projectId }) => {
       _id: projectId,
     })
     .populate("users");
+
+  return project;
+};
+
+export const updateFileTree = async ({ projectId, fileTree }) => {
+  if (!projectId) {
+    throw new Error("projectId is required");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    throw new Error("Invalid projectId");
+  }
+
+  if (!fileTree) {
+    throw new Error("fileTree is required");
+  }
+
+  const project = await projectModel.findOneAndUpdate(
+    {
+      _id: projectId,
+    },
+    {
+      fileTree,
+    },
+    {
+      new: true,
+    }
+  );
 
   return project;
 };
